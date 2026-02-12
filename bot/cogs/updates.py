@@ -13,7 +13,7 @@ from bot.utils.render import send_patch_article
 class UpdatesCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.interval_minutes = int(os.getenv("CHECK_INTERVAL_MINUTES", "15"))
+        self.interval_minutes = int(os.getenv("CHECK_INTERVAL_MINUTES", "30"))
         self.check_updates.change_interval(minutes=self.interval_minutes)
         self.check_updates.start()
 
