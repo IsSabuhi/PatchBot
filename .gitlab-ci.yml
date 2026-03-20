@@ -1,20 +1,20 @@
 variables:
-  IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHORT_SHA"
+    IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
 
 stages:
-  - build
+    - build
 
 build_job:
-  stage: build
-  image: docker:latest
-  services:
-    - name: docker:dind
-      command:
-        - --insecure-registry=192.168.0.108:8883
-  before_script:
-    - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "http://$CI_REGISTRY"
-  script:
-    - docker build -t "$IMAGE_NAME" .
-    - docker push "$IMAGE_NAME"
-  tags:
-    - runner1
+    stage: build
+    image: docker:latest
+    services:
+      - name: docker:dind
+        command:
+          - --insecure-registry=192.168.0.108:8883
+    before_script:
+      - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "http://$CI_REGISTRY"
+    script:
+      - docker build -t "$IMAGE_NAME" .
+      - docker push "$IMAGE_NAME"
+    tags:
+      - runner1
