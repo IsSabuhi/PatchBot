@@ -1,9 +1,9 @@
 stages:
-  - build
+    - build
 
 build_job:
-  stage: build
-  before_script:  
-    - echo "python test app ci cd"
-  tags:
-    - runner1
+    stage: build
+    before_script:  
+      - echo "python test app ci cd"
+    tags:
+      - runner1
