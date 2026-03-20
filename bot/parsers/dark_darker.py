@@ -44,10 +44,10 @@ async def fetch_article_full(article_id: int, lang: str = "ru") -> Optional[Dict
     """
     Получить полное содержимое статьи через POST запрос
     
-    Это запрос к https://www.darkanddarker.com/news/article/{article_id}
+    Это запрос к https://www.darkanddarker.com/news/{article_id}
     с телом {"lang": "ru"}
     """
-    url = f"{BASE_URL}/news/article/{article_id}"
+    url = f"{BASE_URL}/news/{article_id}"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         "Content-Type": "application/json",
