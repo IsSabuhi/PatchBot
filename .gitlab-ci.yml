@@ -9,8 +9,7 @@ build_job:
     stage: build
     image: docker:latest 
     services:
-      - docker:dind      
-    privileged: true      
+      - docker:dind           
     before_script:  
       - echo "$PASS" | docker login -u "$USER" --password-stdin "$CI_REGISTRY"
     script:
