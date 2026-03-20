@@ -1,11 +1,14 @@
+variables:
+    IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHORT_SHA"
+
 stages:
     - build
 
 build_job:
     stage: build
     before_script:  
-      - echo "python test app ci cd"
+      - echo "$PASS" | docker login -u "$USER" -- password-stdin "$CI_REGISTRY"
     script:
-      - echo "test"
+      - docker build -t "$IMAGE_NAME" .
     tags:
       - runner1
