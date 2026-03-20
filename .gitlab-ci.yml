@@ -1,29 +1,22 @@
 variables:
-    IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHORT_SHA"
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_INSECURE_REGISTRY: "192.168.0.108:8883"
+  IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHORT_SHA"
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DAEMON_OPTIONS: "--insecure-registry=192.168.0.108:8883"
 
 stages:
-    - build
+  - build
 
 build_job:
-    stage: build
-    image: docker:latest
-    services:
-      - name: docker:dind
-        command:
-          - --insecure-registry=192.168.0.108:8883
-    before_script:
-      # Добавляем insecure registry в конфиг docker демона
-      - echo '{"insecure-registries":["192.168.0.108:8883"]}' > /etc/docker/daemon.json
-      # Перезапускаем docker демон (это важно!)
-      - pkill dockerd || true
-      - dockerd --insecure-registry=192.168.0.108:8883 &
-      - sleep 5
-      # Логинимся в registry
-      - echo "$PASS" | docker login -u "$USER" --password-stdin "http://192.168.0.108:8883"
-    script:
-      - docker build -t "$IMAGE_NAME" .
-      - docker push "$IMAGE_NAME"
-    tags:
-      - runner1
+  stage: build
+  image: docker:latest
+  services:
+    - name: docker:dind
+      command:
+        - --insecure-registry=192.168.0.108:8883
+  before_script:
+    - echo "$PASS" | docker login -u "$USER" --password-stdin "http://192.168.0.108:8883"
+  script:
+    - docker build -t "$IMAGE_NAME" .
+    - docker push "$IMAGE_NAME"
+  tags:
+    - runner1
