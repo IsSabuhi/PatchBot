@@ -12,7 +12,6 @@ build_job:
     services:
       - name: docker:dind
         command: ["--insecure-registry=192.168.0.108:8883"]  # Передаём аргумент демону
-    privileged: true
     before_script:  
       - echo "$PASS" | docker login -u "$USER" --password-stdin "$CI_REGISTRY"
     script:
