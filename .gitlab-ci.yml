@@ -1,18 +1,22 @@
 variables:
     IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHORT_SHA"
-    DOCKER_TLS_CERTDIR: ""
+    DOCKER_TLS_CERTDIR: ""  # Отключаем TLS между job и dind
+    DOCKER_INSECURE_REGISTRY: "192.168.0.108:8883"  # Разрешаем небезопасный реестр
 
 stages:
     - build
 
 build_job:
     stage: build
-    image: docker:latest 
+    image: docker:latest
     services:
-      - docker:dind           
+      - name: docker:dind
+        command: ["--insecure-registry=192.168.0.108:8883"]  # Передаём аргумент демону
+    privileged: true
     before_script:  
       - echo "$PASS" | docker login -u "$USER" --password-stdin "$CI_REGISTRY"
     script:
       - docker build -t "$IMAGE_NAME" .
+      - docker push "$IMAGE_NAME"
     tags:
       - runner1
