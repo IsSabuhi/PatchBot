@@ -5,5 +5,7 @@ build_job:
     stage: build
     before_script:  
       - echo "python test app ci cd"
+    script:
+      - echo "test"
     tags:
       - runner1
