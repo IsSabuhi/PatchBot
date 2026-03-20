@@ -1,7 +1,5 @@
 variables:
   IMAGE_NAME: "$CI_REGISTRY/$CI_PROJECT_PATH:$CI_COMMIT_SHORT_SHA"
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_DAEMON_OPTIONS: "--insecure-registry=192.168.0.108:8883"
 
 stages:
   - build
@@ -14,7 +12,7 @@ build_job:
       command:
         - --insecure-registry=192.168.0.108:8883
   before_script:
-    - echo "$PASS" | docker login -u "$USER" --password-stdin "http://192.168.0.108:8883"
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_JOB_TOKEN" "http://$CI_REGISTRY"
   script:
     - docker build -t "$IMAGE_NAME" .
     - docker push "$IMAGE_NAME"
