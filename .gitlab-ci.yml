@@ -4,17 +4,24 @@ variables:
 stages:
     - build
 
+cache:
+    paths:
+      - .cache/pip
+    key: "$CI_COMMIT_REF_SLUG"
+
 build_job:
     stage: build
     image: docker:latest
     services:
       - name: docker:dind
         command:
-          - --insecure-registry=192.168.0.108:8883
+          - --insecure-registry=192.168.0.108:5051
     before_script:
       - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "http://$CI_REGISTRY"
     script:
-      - docker build -t "$IMAGE_NAME" .
+      - docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" .
       - docker push "$IMAGE_NAME"
     tags:
       - runner1
+    variables:
+      DOCKER_BUILDKIT: 1  

@@ -8,6 +8,9 @@ from bot.utils.db import db_manager
 load_dotenv()
 
 PROXY_URL = "http://127.0.0.1:10801"
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+if not DISCORD_TOKEN:
+    raise ValueError("DISCORD_TOKEN не задан в переменных окружения")
 
 intents = discord.Intents.default()
 intents.message_content = True  
@@ -51,16 +54,12 @@ async def main():
     print("📦 Загрузка cogs...")
     await load_cogs()
 
-    token = os.getenv("DISCORD_TOKEN")
-    if not token:
-        raise RuntimeError("❌DISCORD_TOKEN не задан в .env")
-
     bot.http.proxy = PROXY_URL
     
     print("🚀 Запуск бота...\n")
 
     try: 
-        await bot.start('MTQ1MTU5NDQ3Mzg3NTMwODY4Nw.G2A8-5.fO8RWrpG7RNOnH-BISUO04g6K2kPVUC7Mn7_j4')
+        await bot.start(DISCORD_TOKEN)
     except Exception as e:
         import traceback
         print("❌ Ошибка при запуске бота:", repr(e))
