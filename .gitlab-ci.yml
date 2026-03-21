@@ -20,11 +20,16 @@ build_job:
           - --insecure-registry=192.168.0.108:5051
     before_script:
       - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "http://$CI_REGISTRY"
+      - docker run --privileged --rm tonistiigi/binfmt --install all
+      - docker buildx create --use --name multiarch
+      - docker buildx inspect --bootstrap
     script:
-      - docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" .
-      - docker push "$IMAGE_NAME"
-      - docker tag "$IMAGE_NAME" "$LATEST_IMAGE"
-      - docker push "$LATEST_IMAGE"
+      - docker buildx build \
+          --platform linux/arm64,linux/amd64 \
+          --build-arg BUILDKIT_INLINE_CACHE=1 \
+          -t "$IMAGE_NAME" \
+          -t "$LATEST_IMAGE" \
+          --push .
     tags:
       - runner1
     variables:
@@ -50,7 +55,7 @@ deploy_job:
           cd /home/ism/PatchBot/patchbot &&
           docker-compose pull &&
           docker-compose up -d --force-recreate &&
-          docker image prune -f &&
+          docker image prune -af --filter "until=24h" &&
           echo '✅ Бот успешно обновлен'
         "
     tags:
