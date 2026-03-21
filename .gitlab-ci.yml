@@ -23,6 +23,8 @@ build_job:
     script:
       - docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" .
       - docker push "$IMAGE_NAME"
+      - docker tag "$IMAGE_NAME" "$LATEST_IMAGE"
+      - docker push "$LATEST_IMAGE"
     tags:
       - runner1
     variables:
