@@ -22,7 +22,7 @@ build_job:
       - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "http://$CI_REGISTRY"
       - docker run --privileged --rm tonistiigi/binfmt --install all
       - docker buildx rm multiarch || true
-      - docker buildx create --use --name multiarch
+      - docker buildx create --use --name multiarch --driver-opt network=host
       - docker buildx inspect --bootstrap
     script:
       - docker buildx build --platform linux/arm64,linux/amd64 --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" --push .
