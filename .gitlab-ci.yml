@@ -29,6 +29,9 @@ build_job:
       - runner1
     variables:
       DOCKER_BUILDKIT: 1  
+    only:
+      - master
+      - develop
 
 deploy_job:
     stage: deploy
@@ -43,17 +46,11 @@ deploy_job:
     script:
       - ssh ism@192.168.0.107 "
           echo '🚀 Начинаем деплой...' &&
-          docker login -u ism -p '$REGISTRY_PASSWORD' http://192.168.0.108:5051 &&
+          echo '$REGISTRY_PASSWORD' | docker login -u ism --password-stdin http://192.168.0.108:5051 &&
           cd /home/ism/PatchBot/patchbot &&
-          docker pull $LATEST_IMAGE &&
-          docker stop patchbot || true &&
-          docker rm patchbot || true &&
-          docker run -d \
-            --name patchbot \
-            --restart always \
-            --env-file .env \
-            --volume /home/ism/PatchBot/patchbot/data:/app/data \
-            $LATEST_IMAGE &&
+          docker-compose pull &&
+          docker-compose up -d --force-recreate &&
+          docker image prune -f &&
           echo '✅ Бот успешно обновлен'
         "
     tags:
