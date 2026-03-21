@@ -40,9 +40,9 @@ deploy_job:
       - ssh-keyscan -H 192.168.0.107 >> ~/.ssh/known_hosts
     script:
       - ssh ism@192.168.0.107 "
-          echo '🔄 Обновление бота...' &&
+          echo '🚀 Начинаем деплой...' &&
           docker login -u ism -p '$REGISTRY_PASSWORD' http://192.168.0.108:5051 &&
-          cd ~/PatchBot/patchbot &&
+          cd /home/ism/PatchBot/patchbot &&
           docker pull $LATEST_IMAGE &&
           docker stop patchbot || true &&
           docker rm patchbot || true &&
@@ -50,8 +50,9 @@ deploy_job:
             --name patchbot \
             --restart always \
             --env-file .env \
+            --volume /home/ism/PatchBot/patchbot/data:/app/data \
             $LATEST_IMAGE &&
-          echo '✅ Деплой завершен успешно'
+          echo '✅ Бот успешно обновлен'
         "
     tags:
       - runner1
