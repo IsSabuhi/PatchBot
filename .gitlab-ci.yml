@@ -1,0 +1,63 @@
+variables:
+    IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    LATEST_IMAGE: "$CI_REGISTRY_IMAGE:latest"
+
+stages:
+    - build
+    - deploy
+
+cache:
+    paths:
+      - .cache/pip
+    key: "$CI_COMMIT_REF_SLUG"
+
+build_job:
+    stage: build
+    image: docker:latest
+    services:
+      - name: docker:dind
+        command:
+          - --insecure-registry=192.168.0.108:5051
+    before_script:
+      - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "http://$CI_REGISTRY"
+      - docker run --privileged --rm tonistiigi/binfmt --install all
+      - docker buildx rm multiarch || true
+      - docker buildx create --use --name multiarch --driver-opt network=host
+      - docker buildx inspect --bootstrap
+    script:
+      - docker buildx build --platform linux/arm64,linux/amd64 --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" --push .
+    tags:
+      - runner1
+    variables:
+      DOCKER_BUILDKIT: 1  
+    only:
+      - master
+      - develop
+
+deploy_job:
+    stage: deploy
+    image: alpine:latest
+    before_script:
+      - apk add --no-cache openssh-client
+      - eval $(ssh-agent -s)
+      - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+      - mkdir -p ~/.ssh
+      - chmod 700 ~/.ssh
+      - ssh-keyscan -H 192.168.0.107 >> ~/.ssh/known_hosts
+    script:
+      - ssh ism@192.168.0.107 "
+          echo '🚀 Начинаем деплой...' &&
+          echo '$REGISTRY_PASSWORD' | docker login -u ism --password-stdin http://192.168.0.108:5051 &&
+          cd /home/ism/PatchBot/patchbot &&
+          docker-compose pull &&
+          docker-compose up -d --force-recreate &&
+          docker image prune -af --filter "until=24h" &&
+          echo '✅ Бот успешно обновлен'
+        "
+    tags:
+      - runner1
+    only:
+      - master
+    when: on_success
+    needs:
+      - build_job
