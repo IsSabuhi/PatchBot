@@ -1,9 +1,6 @@
-# Образ в registry совпадает с CI_REGISTRY_IMAGE (зависит от пути проекта в GitLab).
-# На сервере деплоя в .env задайте PATCHBOT_IMAGE тем же значением, если путь нестандартный.
 variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
     LATEST_IMAGE: "$CI_REGISTRY_IMAGE:latest"
-    # RPI и runner в одной сети 192.168.1.x
     DEPLOY_SSH_HOST: "192.168.1.107"
     # dind без TLS — типовая схема для GitLab Docker executor
     DOCKER_HOST: "tcp://docker:2375"
@@ -56,13 +53,13 @@ deploy_job:
     script:
       - ssh "ism@${DEPLOY_SSH_HOST}" "
           set -e
-          echo '🚀 Начинаем деплой...'
+          echo '> > > Начинаем деплой...'
           echo '$REGISTRY_PASSWORD' | docker login -u ism --password-stdin http://192.168.1.108:5051
           cd /home/ism/PatchBot/patchbot
           docker compose pull
           docker compose up -d --force-recreate
           docker image prune -af --filter \"until=24h\" || true
-          echo '✅ Бот успешно обновлен'
+          echo '> > > Бот успешно обновлен'
         "
     tags:
       - runner1
