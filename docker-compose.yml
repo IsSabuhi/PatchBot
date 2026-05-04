@@ -1,7 +1,9 @@
+# Образ должен совпадать с CI_REGISTRY_IMAGE в GitLab (Settings → General → Project ID / path).
+# Пример: PATCHBOT_IMAGE=192.168.1.108:5051/ism/patchbot:latest
 services:
   bot:
+    image: ${PATCHBOT_IMAGE:-192.168.1.108:5051/ism/patchbot:latest}
     build: .
-    #image: 192.168.0.108:5051/ism/patchbot:latest
     container_name: patchbot
     restart: unless-stopped
     env_file:

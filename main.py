@@ -7,7 +7,8 @@ from bot.utils.db import db_manager
 
 load_dotenv()
 
-PROXY_URL = "http://127.0.0.1:10801"
+# Прокси для Discord: из окружения (docker-compose) или .env; порт по умолчанию как в compose
+PROXY_URL = os.getenv("PROXY_URL", "http://127.0.0.1:10808")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 if not DISCORD_TOKEN:
     raise ValueError("DISCORD_TOKEN не задан в переменных окружения")
@@ -54,7 +55,8 @@ async def main():
     print("📦 Загрузка cogs...")
     await load_cogs()
 
-    bot.http.proxy = PROXY_URL
+    if PROXY_URL:
+        bot.http.proxy = PROXY_URL
     
     print("🚀 Запуск бота...\n")
 
