@@ -1,12 +1,11 @@
-# Образ в registry = CI_REGISTRY_IMAGE. На RPI в .env при необходимости PATCHBOT_IMAGE.
-# HTTP registry без TLS: логин только на http://… и insecure-registry у dind (см. build_job).
+# Образ = CI_REGISTRY_IMAGE. HTTP registry: на машине с раннером в /etc/docker/daemon.json нужно:
+#   "insecure-registries": ["192.168.1.108:5051"]
+# Раннер (config.toml): privileged = true, volumes = ["/var/run/docker.sock:/var/run/docker.sock", ...]
+# Сборка БЕЗ docker:dind — иначе часто "docker.sock: device or resource busy" и без insecure-registry демон не поднимается.
 variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
     LATEST_IMAGE: "$CI_REGISTRY_IMAGE:latest"
     DEPLOY_SSH_HOST: "192.168.1.107"
-    DOCKER_HOST: "tcp://docker:2375"
-    DOCKER_TLS_CERTDIR: ""
-    # Явный URL для docker login (иначе CLI часто ходит на https:// и падает на HTTP registry)
     REGISTRY_HTTP_URL: "http://192.168.1.108:5051"
 
 stages:
@@ -21,12 +20,13 @@ cache:
 build_job:
     stage: build
     image: docker:latest
-    services:
-      - name: docker:dind
-        alias: docker
-        command:
-          - "--insecure-registry=192.168.1.108:5051"
+    # Не используем services: docker:dind — конфликт сокета + HTTP registry без insecure на dind
+    variables:
+        DOCKER_HOST: "unix:///var/run/docker.sock"
+        DOCKER_TLS_CERTDIR: ""
+        DOCKER_BUILDKIT: "1"
     before_script:
+      - docker info
       - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "$REGISTRY_HTTP_URL"
       - docker run --privileged --rm tonistiigi/binfmt --install all
       - docker buildx rm multiarch || true
@@ -36,8 +36,6 @@ build_job:
       - docker buildx build --platform linux/arm64,linux/amd64 --provenance=false --sbom=false --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" --push .
     tags:
       - runner1
-    variables:
-      DOCKER_BUILDKIT: 1
     only:
       - master
       - develop
@@ -53,7 +51,6 @@ deploy_job:
       - chmod 700 ~/.ssh
       - ssh-keyscan -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts
     script:
-      # Пароль подставляет runner; на удалённой машине только docker login
       - ssh "ism@${DEPLOY_SSH_HOST}" "set -e && echo \"🚀 Деплой...\" && echo \"${REGISTRY_PASSWORD}\" | docker login -u ism --password-stdin http://192.168.1.108:5051 && cd /home/ism/PatchBot/patchbot && docker compose pull && docker compose up -d --force-recreate && (docker image prune -af --filter \"until=24h\" || true) && echo \"✅ Готово\""
     tags:
       - runner1
