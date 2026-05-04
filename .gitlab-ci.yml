@@ -1,10 +1,13 @@
 # Образ в registry = CI_REGISTRY_IMAGE. На RPI в .env при необходимости PATCHBOT_IMAGE.
+# HTTP registry без TLS: логин только на http://… и insecure-registry у dind (см. build_job).
 variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
     LATEST_IMAGE: "$CI_REGISTRY_IMAGE:latest"
     DEPLOY_SSH_HOST: "192.168.1.107"
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ""
+    # Явный URL для docker login (иначе CLI часто ходит на https:// и падает на HTTP registry)
+    REGISTRY_HTTP_URL: "http://192.168.1.108:5051"
 
 stages:
     - build
@@ -20,10 +23,11 @@ build_job:
     image: docker:latest
     services:
       - name: docker:dind
+        alias: docker
         command:
-          - --insecure-registry=192.168.1.108:5051
+          - "--insecure-registry=192.168.1.108:5051"
     before_script:
-      - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "http://$CI_REGISTRY"
+      - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "$REGISTRY_HTTP_URL"
       - docker run --privileged --rm tonistiigi/binfmt --install all
       - docker buildx rm multiarch || true
       - docker buildx create --use --name multiarch
