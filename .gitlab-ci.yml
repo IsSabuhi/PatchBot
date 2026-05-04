@@ -1,8 +1,8 @@
+# Образ в registry = CI_REGISTRY_IMAGE. На RPI в .env при необходимости PATCHBOT_IMAGE.
 variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
     LATEST_IMAGE: "$CI_REGISTRY_IMAGE:latest"
     DEPLOY_SSH_HOST: "192.168.1.107"
-    # dind без TLS — типовая схема для GitLab Docker executor
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_TLS_CERTDIR: ""
 
@@ -24,18 +24,16 @@ build_job:
           - --insecure-registry=192.168.1.108:5051
     before_script:
       - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "http://$CI_REGISTRY"
-      # QEMU для сборки «чужой» архитектуры (например amd64 образа на arm64 runner)
       - docker run --privileged --rm tonistiigi/binfmt --install all
       - docker buildx rm multiarch || true
       - docker buildx create --use --name multiarch
       - docker buildx inspect --bootstrap
     script:
-      # Цель — RPI5 (arm64). amd64 оставлен для локального теста на ПК; при медленном runner можно оставить только linux/arm64
       - docker buildx build --platform linux/arm64,linux/amd64 --provenance=false --sbom=false --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" --push .
     tags:
       - runner1
     variables:
-      DOCKER_BUILDKIT: 1  
+      DOCKER_BUILDKIT: 1
     only:
       - master
       - develop
@@ -51,16 +49,8 @@ deploy_job:
       - chmod 700 ~/.ssh
       - ssh-keyscan -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts
     script:
-      - ssh "ism@${DEPLOY_SSH_HOST}" "
-          set -e
-          echo '> > > Начинаем деплой...'
-          echo '$REGISTRY_PASSWORD' | docker login -u ism --password-stdin http://192.168.1.108:5051
-          cd /home/ism/PatchBot/patchbot
-          docker compose pull
-          docker compose up -d --force-recreate
-          docker image prune -af --filter \"until=24h\" || true
-          echo '> > > Бот успешно обновлен'
-        "
+      # Пароль подставляет runner; на удалённой машине только docker login
+      - ssh "ism@${DEPLOY_SSH_HOST}" "set -e && echo \"🚀 Деплой...\" && echo \"${REGISTRY_PASSWORD}\" | docker login -u ism --password-stdin http://192.168.1.108:5051 && cd /home/ism/PatchBot/patchbot && docker compose pull && docker compose up -d --force-recreate && (docker image prune -af --filter \"until=24h\" || true) && echo \"✅ Готово\""
     tags:
       - runner1
     only:

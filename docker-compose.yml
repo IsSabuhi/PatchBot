@@ -1,5 +1,4 @@
-# Образ должен совпадать с CI_REGISTRY_IMAGE в GitLab (Settings → General → Project ID / path).
-# Пример: PATCHBOT_IMAGE=192.168.1.108:5051/ism/patchbot:latest
+# Образ = CI_REGISTRY_IMAGE в GitLab. Пример: PATCHBOT_IMAGE=192.168.1.108:5051/ism/patchbot:latest
 services:
   bot:
     image: ${PATCHBOT_IMAGE:-192.168.1.108:5051/ism/patchbot:latest}
@@ -8,11 +7,10 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    network_mode: host          
+    network_mode: host
     environment:
-      HTTP_PROXY:  "http://127.0.0.1:10808"
+      HTTP_PROXY: "http://127.0.0.1:10808"
       HTTPS_PROXY: "http://127.0.0.1:10808"
-      # опционально, если в коде читаешь:
-      PROXY_URL:   "http://127.0.0.1:10808"
+      PROXY_URL: "http://127.0.0.1:10808"
     volumes:
       - ./data:/app/data

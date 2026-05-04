@@ -7,14 +7,13 @@ from bot.utils.db import db_manager
 
 load_dotenv()
 
-# Прокси для Discord: из окружения (docker-compose) или .env; порт по умолчанию как в compose
 PROXY_URL = os.getenv("PROXY_URL", "http://127.0.0.1:10808")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 if not DISCORD_TOKEN:
     raise ValueError("DISCORD_TOKEN не задан в переменных окружения")
 
 intents = discord.Intents.default()
-intents.message_content = True  
+intents.message_content = True
 intents.members = True
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
@@ -34,7 +33,7 @@ async def load_cogs():
         print("✅ Загружен cog: admin")
     except Exception as e:
         print(f"❌ Ошибка загрузки cog admin: {e}")
-    
+
     try:
         await bot.load_extension("bot.cogs.updates")
         print("✅ Загружен cog: updates")
@@ -57,10 +56,10 @@ async def main():
 
     if PROXY_URL:
         bot.http.proxy = PROXY_URL
-    
+
     print("🚀 Запуск бота...\n")
 
-    try: 
+    try:
         await bot.start(DISCORD_TOKEN)
     except Exception as e:
         import traceback
