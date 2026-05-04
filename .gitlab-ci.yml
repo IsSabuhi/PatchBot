@@ -1,6 +1,6 @@
 # Образ = CI_REGISTRY_IMAGE. HTTP registry:
 # 1) /etc/docker/daemon.json на раннере: "insecure-registries": ["192.168.1.108:5051"]
-# 2) BuildKit при buildx --push сам ходит на https — ниже генерируется buildkit.toml (http + insecure).
+# 2) buildkit.toml: только http = true (plain HTTP). С insecure = true одновременно нельзя — иначе снова HTTPS.
 # Раннер: privileged = true, volumes = ["/var/run/docker.sock:/var/run/docker.sock", ...]
 variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
@@ -29,8 +29,8 @@ build_job:
       - docker info
       - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "$REGISTRY_HTTP_URL"
       - docker run --privileged --rm tonistiigi/binfmt --install all
-      # BuildKit иначе делает Head "https://registry/..." к HTTP-only registry
-      - printf '%s\n' '[registry."'"${CI_REGISTRY}"'"]' 'http = true' 'insecure = true' > buildkit.toml
+      # Plain HTTP registry: только http=true (с insecure=true в одной секции BuildKit ведёт себя неверно)
+      - printf '%s\n' '[registry."'"${CI_REGISTRY}"'"]' 'http = true' > buildkit.toml
       - cat buildkit.toml
       - docker buildx rm multiarch || true
       - docker buildx create --use --name multiarch --driver docker-container --config buildkit.toml
