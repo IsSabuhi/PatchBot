@@ -34,7 +34,9 @@ build_job:
       - docker buildx use default || true
       - docker buildx inspect --bootstrap
     script:
-      - docker buildx build --builder default --platform linux/arm64,linux/amd64 --provenance=false --sbom=false --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" --push .
+      # Для docker driver доступна только одиночная платформа.
+      # Целевой сервер деплоя — RPI5, поэтому собираем linux/arm64.
+      - docker buildx build --builder default --platform linux/arm64 --provenance=false --sbom=false --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" --push .
     tags:
       - runner1
     only:
