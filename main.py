@@ -7,7 +7,7 @@ from bot.utils.db import db_manager
 
 load_dotenv()
 
-PROXY_URL = os.getenv("PROXY_URL", "http://127.0.0.1:10808")
+PROXY_URL = os.getenv("PROXY_URL", "http://127.0.0.1:10801")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 if not DISCORD_TOKEN:
     raise ValueError("DISCORD_TOKEN не задан в переменных окружения")
