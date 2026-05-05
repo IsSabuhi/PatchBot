@@ -1,6 +1,7 @@
 # Образ = CI_REGISTRY_IMAGE. HTTP registry:
 # 1) /etc/docker/daemon.json на раннере: "insecure-registries": ["192.168.1.108:5051"]
-# 2) buildkit.toml: только http = true (plain HTTP). С insecure = true одновременно нельзя — иначе снова HTTPS.
+# 2) Для HTTP registry используем buildx driver=docker (через Docker daemon хоста),
+#    чтобы push учитывал insecure-registries из daemon.json.
 # Раннер: privileged = true, volumes = ["/var/run/docker.sock:/var/run/docker.sock", ...]
 variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
@@ -29,14 +30,11 @@ build_job:
       - docker info
       - echo "$REGISTRY_PASSWORD" | docker login -u "ism" --password-stdin "$REGISTRY_HTTP_URL"
       - docker run --privileged --rm tonistiigi/binfmt --install all
-      # Plain HTTP registry: только http=true (с insecure=true в одной секции BuildKit ведёт себя неверно)
-      - printf '%s\n' '[registry."'"${CI_REGISTRY}"'"]' 'http = true' > buildkit.toml
-      - cat buildkit.toml
-      - docker buildx rm multiarch || true
-      - docker buildx create --use --name multiarch --driver docker-container --config buildkit.toml
+      # Driver docker -> использует daemon хоста и его insecure-registries
+      - docker buildx use default || true
       - docker buildx inspect --bootstrap
     script:
-      - docker buildx build --platform linux/arm64,linux/amd64 --provenance=false --sbom=false --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" --push .
+      - docker buildx build --builder default --platform linux/arm64,linux/amd64 --provenance=false --sbom=false --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" --push .
     tags:
       - runner1
     only:
