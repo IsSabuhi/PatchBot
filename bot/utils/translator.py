@@ -1,7 +1,8 @@
+import os
 import aiohttp
 import asyncio
 
-PROXY_URL = "http://127.0.0.1:10801"
+PROXY_URL = os.getenv("PROXY_URL", "http://127.0.0.1:10808")
 
 async def translate_to_ru(text: str) -> str:
     """Перевод через Google Translate API с прокси"""

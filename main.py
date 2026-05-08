@@ -8,6 +8,7 @@ from bot.utils.db import db_manager
 load_dotenv()
 
 PROXY_URL = os.getenv("PROXY_URL", "http://127.0.0.1:10808")
+APP_VERSION = os.getenv("APP_VERSION", "dev")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 if not DISCORD_TOKEN:
     raise ValueError("DISCORD_TOKEN не задан в переменных окружения")
@@ -20,6 +21,7 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 @bot.event
 async def on_ready():
     print(f"✅ Бот вошёл как {bot.user}")
+    print(f"🏷️ Версия: {APP_VERSION}")
     try:
         synced = await bot.tree.sync()
         print(f"✅ Синхронизировано slash-команд: {len(synced)}")
@@ -48,6 +50,7 @@ async def load_cogs():
 
 
 async def main():
+    print(f"🏷️ Запуск версии: {APP_VERSION}")
     print("🗄️  Инициализация БД...")
     await db_manager.init_db()
 

@@ -6,6 +6,7 @@
 variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
     LATEST_IMAGE: "$CI_REGISTRY_IMAGE:latest"
+    RELEASE_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
     DEPLOY_SSH_HOST: "192.168.1.107"
     REGISTRY_HTTP_URL: "http://192.168.1.108:5051"
 
@@ -34,14 +35,23 @@ build_job:
       - docker buildx use default || true
       - docker buildx inspect --bootstrap
     script:
+      - export APP_VERSION="${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}"
       # Для docker driver доступна только одиночная платформа.
       # Целевой сервер деплоя — RPI5, поэтому собираем linux/arm64.
-      - docker buildx build --builder default --platform linux/arm64 --provenance=false --sbom=false --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" --push .
+      - |
+        if [ -n "$CI_COMMIT_TAG" ]; then
+          echo "🏷️ Release tag: $CI_COMMIT_TAG"
+          docker buildx build --builder default --platform linux/arm64 --provenance=false --sbom=false --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" -t "$RELEASE_IMAGE" --push .
+        else
+          echo "🧩 Build version: $APP_VERSION"
+          docker buildx build --builder default --platform linux/arm64 --provenance=false --sbom=false --build-arg BUILDKIT_INLINE_CACHE=1 -t "$IMAGE_NAME" -t "$LATEST_IMAGE" --push .
+        fi
     tags:
       - runner1
     only:
       - master
       - develop
+      - tags
 
 deploy_job:
     stage: deploy
@@ -54,11 +64,14 @@ deploy_job:
       - chmod 700 ~/.ssh
       - ssh-keyscan -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts
     script:
-      - ssh "ism@${DEPLOY_SSH_HOST}" "set -e && echo \"🚀 Деплой...\" && echo \"${REGISTRY_PASSWORD}\" | docker login -u ism --password-stdin http://192.168.1.108:5051 && cd /home/ism/PatchBot/patchbot && docker compose pull && docker compose up -d --force-recreate && (docker image prune -af --filter \"until=24h\" || true) && echo \"✅ Готово\""
+      - export APP_VERSION="${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}"
+      - export DEPLOY_IMAGE="${IMAGE_NAME}"
+      - ssh "ism@${DEPLOY_SSH_HOST}" "set -e && echo \"🚀 Деплой версии: ${APP_VERSION}\" && echo \"${REGISTRY_PASSWORD}\" | docker login -u ism --password-stdin http://192.168.1.108:5051 && cd /home/ism/PatchBot/patchbot && PATCHBOT_IMAGE=\"${DEPLOY_IMAGE}\" APP_VERSION=\"${APP_VERSION}\" docker compose pull && PATCHBOT_IMAGE=\"${DEPLOY_IMAGE}\" APP_VERSION=\"${APP_VERSION}\" docker compose up -d --force-recreate && docker inspect patchbot --format 'image={{.Config.Image}} created={{.Created}}' && (docker image prune -af --filter \"until=24h\" || true) && echo \"✅ Готово\""
     tags:
       - runner1
     only:
       - master
+      - tags
     when: on_success
     needs:
       - build_job
