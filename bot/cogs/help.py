@@ -12,6 +12,7 @@ class HelpCog(commands.Cog):
     )
     async def help_slash(self, interaction: discord.Interaction):
         """Показать список команд бота."""
+        print(f"🟡 /help от {interaction.user} в #{getattr(interaction.channel, 'name', '?')}")
         updates_cog = self.bot.get_cog("UpdatesCog")
         interval = getattr(updates_cog, "interval_minutes", None)
         interval_text = f"{interval} мин" if interval is not None else "по умолчанию"

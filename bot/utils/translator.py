@@ -38,12 +38,11 @@ async def translate_to_ru(text: str) -> str:
             ) as response:
                 if response.status == 200:
                     data = await response.json()
-                    # Парсим ответ Google Translate
                     translated = ''.join([part[0] for part in data[0]])
                     return translated
                 else:
-                    print(f"❌ HTTP {response.status}")
+                    print(f"❌ Translate HTTP {response.status} (proxy={proxy})")
                     return text
     except Exception as e:
-        print(f"❌ Ошибка перевода: {type(e).__name__}: {e}")
+        print(f"❌ Ошибка перевода (proxy={PROXY_URL}): {type(e).__name__}: {e}")
         return text
