@@ -25,7 +25,7 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 async def on_ready():
     print(f"✅ Бот вошёл как {bot.user}")
     print(f"🏷️ Версия: {APP_VERSION}")
-    print(f"🔌 PROXY_URL={PROXY_URL}")
+    # print(f"🔌 PROXY_URL={PROXY_URL}")
     try:
         synced = await bot.tree.sync()
         print(f"✅ Синхронизировано slash-команд: {len(synced)}")
@@ -113,8 +113,8 @@ async def main():
     print("📦 Загрузка cogs...")
     await load_cogs()
 
-    if PROXY_URL:
-        bot.http.proxy = PROXY_URL
+    # if PROXY_URL:
+    #     bot.http.proxy = PROXY_URL
 
     print("🚀 Запуск бота...\n")
 

@@ -18,9 +18,10 @@ async def fetch_articles(page: int = 1) -> Optional[list]:
     payload = {"page": page, "type": "all"}
 
     try:
-        async with aiohttp.ClientSession() as session:
+        timeout = aiohttp.ClientTimeout(total=45)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             print(f"🔌 POST к {NEWS_URL} с page={page}")
-            async with session.post(NEWS_URL, headers=headers, json=payload, timeout=15) as resp:
+            async with session.post(NEWS_URL, headers=headers, json=payload) as resp:
                 print(f"📊 HTTP {resp.status}")
                 
                 if resp.status != 200:
@@ -42,24 +43,26 @@ async def fetch_articles(page: int = 1) -> Optional[list]:
 
 async def fetch_article_full(article_id: int, lang: str = "ru") -> Optional[Dict]:
     """
-    Получить полное содержимое статьи через POST запрос
-    
-    Это запрос к https://www.darkanddarker.com/news/{article_id}
-    с телом {"lang": "ru"}
+    Получить полное содержимое статьи через POST запрос.
+
+    Актуальный эндпоинт: POST /news/article/{article_id} с телом {"lang": "ru"|"en"}.
+    (старый /news/{id} отдаёт 404)
     """
-    url = f"{BASE_URL}/news/{article_id}"
+    url = f"{BASE_URL}/news/article/{article_id}"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         "Content-Type": "application/json",
         "Origin": BASE_URL,
         "Referer": f"{BASE_URL}/news/all",
+        "Accept": "application/json",
     }
     payload = {"lang": lang}
 
     try:
         print(f"📖 POST к {url} (lang={lang})")
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, json=payload, timeout=15) as resp:
+        timeout = aiohttp.ClientTimeout(total=45)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, headers=headers, json=payload) as resp:
                 print(f"📊 HTTP {resp.status}")
                 
                 if resp.status != 200:
